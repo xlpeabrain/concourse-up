@@ -1,0 +1,50 @@
+version: '3'
+
+services:
+  concourse-db:
+    image: postgres:latest
+    volumes: ["~/Dev/docker/mounts/postgres/data:/database"]
+    ports: ["5432:5432"]
+    environment:
+    - POSTGRES_DB=concourse
+    - POSTGRES_PASSWORD=concourse_pass
+    - POSTGRES_USER=concourse_user
+    - PGDATA=/database
+
+  concourse-web:
+    image: concourse/concourse:latest
+    command: web
+    privileged: true
+    depends_on: [concourse-db]
+    volumes:
+    - ~/Dev/docker/mounts/concourse/worker:/worker-dir
+    - ~/Dev/docker/keys/web:/concourse-keys
+    ports: ["8081:8080"]
+    restart: unless-stopped # required so that it retries until conocurse-db comes up
+    environment:
+    - CONCOURSE_POSTGRES_HOST=concourse-db
+    - CONCOURSE_POSTGRES_USER=concourse_user
+    - CONCOURSE_POSTGRES_PASSWORD=concourse_pass
+    - CONCOURSE_POSTGRES_DATABASE=concourse
+    - CONCOURSE_EXTERNAL_URL
+    - CONCOURSE_BASIC_AUTH_USERNAME=admin
+    - CONCOURSE_BASIC_AUTH_PASSWORD=secret
+    - CONCOURSE_NO_REALLY_I_DONT_WANT_ANY_AUTH=true
+    - CONCOURSE_WORKER_GARDEN_NETWORK
+    - CONCOURSE_WORKER_WORK_DIR=/worker-dir
+    - CONCOURSE_TSA_HOST_KEY=/concourse-keys/tsa_host_key
+    - CONCOURSE_TSA_AUTHORIZED_KEYS=/concourse-keys/authorized_worker_keys
+    - CONCOURSE_SESSION_SIGNING_KEY=/concourse-keys/session_signing_key
+  concourse-worker:
+    image: concourse/concourse
+    command: worker
+    privileged: true
+    links: [concourse-web]
+    depends_on: [concourse-web]
+    restart: unless-stopped
+    volumes: ["~/Dev/docker/keys/worker:/concourse-keys"]
+    environment:
+    - CONCOURSE_TSA_HOST=concourse-web
+    - CONCOURSE_GARDEN_NETWORK
+    - CONCOURSE_TSA_PUBLIC_KEY=/concourse-keys/tsa_host_key.pub
+    - CONCOURSE_TSA_WORKER_PRIVATE_KEY=/concourse-keys/worker_key
