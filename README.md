@@ -20,9 +20,9 @@ ssh-keygen -t rsa -f ~/Dev/docker/keys/web/session_signing_key -N ''
 ssh-keygen -t rsa -f ~/Dev/docker/keys/worker/worker_key -N ''
 
 **Exchange the keys between the host and workers for communications**  
-cp ./keys/worker/worker_key.pub ~/Dev/docker/keys/web/authorized_worker_keys
+cp ~/Dev/docker/keys/worker/worker_key.pub ~/Dev/docker/keys/web/authorized_worker_keys
 
-cp ./keys/web/tsa_host_key.pub ~/Dev/docker/keys/worker
+cp ~/Dev/docker/keys/web/tsa_host_key.pub ~/Dev/docker/keys/worker
 
 **Multiple Workers**
 
